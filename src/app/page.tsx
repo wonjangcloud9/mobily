@@ -3,64 +3,106 @@
 import { Timer } from '@/components/Timer';
 import { Progress } from '@/components/Progress';
 import { Checklist } from '@/components/Checklist';
-import { Settings } from '@/components/Settings';
-import { useChecklist, getProgress } from '@/hooks/useChecklist';
-import { DAILY_ITEMS, WEEKLY_ITEMS, ALL_ITEMS } from '@/lib/constants';
+import { Sidebar } from '@/components/Sidebar';
+import { CharacterTabs } from '@/components/CharacterTabs';
+import {
+  useChecklist,
+  getDailyProgress,
+  getWeeklyProgress,
+} from '@/hooks/useChecklist';
+import { DAILY_ITEMS, WEEKLY_ITEMS } from '@/lib/constants';
 
 export default function Home() {
-  const { checks, disabled, toggleCheck, toggleDisabled, resetAll } =
-    useChecklist();
-  const progress = getProgress(checks, disabled);
+  const {
+    characters,
+    activeCharacter,
+    canAddCharacter,
+    addCharacter,
+    removeCharacter,
+    renameCharacter,
+    setActiveCharacter,
+    checks,
+    disabled,
+    toggleCheck,
+    toggleDisabled,
+    resetAll,
+  } = useChecklist();
+
+  const dailyProgress = getDailyProgress(checks, disabled);
+  const weeklyProgress = getWeeklyProgress(checks, disabled);
 
   return (
-    <main className="min-h-screen py-8 px-4">
-      <div className="max-w-md mx-auto space-y-6">
-        <header className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">
-            데일리 체크 도우미
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            오늘 할 것만 딱! 10초 안에 확인
-          </p>
-        </header>
+    <>
+      <Sidebar
+        disabled={disabled}
+        onToggleDisabled={toggleDisabled}
+        onReset={resetAll}
+      />
 
-        <Timer />
+      <main className="min-h-screen py-6 px-4">
+        <div className="max-w-md mx-auto space-y-5">
+          <header className="text-center">
+            <h1 className="text-2xl font-bold text-gray-800">
+              모비노기 숙제 체커
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              오늘 할 것만 딱! 10초 안에 확인
+            </p>
+          </header>
 
-        <Progress
-          completed={progress.completed}
-          total={progress.total}
-          percent={progress.percent}
-        />
-
-        <div className="space-y-4">
-          <Checklist
-            title="일일 콘텐츠"
-            items={DAILY_ITEMS}
-            checks={checks}
-            disabled={disabled}
-            onToggle={toggleCheck}
+          {/* 캐릭터 탭 */}
+          <CharacterTabs
+            characters={characters}
+            activeCharacter={activeCharacter}
+            canAddCharacter={canAddCharacter}
+            onSelect={setActiveCharacter}
+            onAdd={addCharacter}
+            onRemove={removeCharacter}
+            onRename={renameCharacter}
           />
 
-          <Checklist
-            title="주간 콘텐츠"
-            items={WEEKLY_ITEMS}
-            checks={checks}
-            disabled={disabled}
-            onToggle={toggleCheck}
-          />
+          <Timer />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Progress
+              label="일일"
+              completed={dailyProgress.completed}
+              total={dailyProgress.total}
+              percent={dailyProgress.percent}
+              color="blue"
+            />
+            <Progress
+              label="주간"
+              completed={weeklyProgress.completed}
+              total={weeklyProgress.total}
+              percent={weeklyProgress.percent}
+              color="purple"
+            />
+          </div>
+
+          <div className="space-y-4 animate-slide-up" key={activeCharacter?.id}>
+            <Checklist
+              title="일일 콘텐츠"
+              items={DAILY_ITEMS}
+              checks={checks}
+              disabled={disabled}
+              onToggle={toggleCheck}
+            />
+
+            <Checklist
+              title="주간 콘텐츠"
+              items={WEEKLY_ITEMS}
+              checks={checks}
+              disabled={disabled}
+              onToggle={toggleCheck}
+            />
+          </div>
+
+          <footer className="text-center text-xs text-gray-400 pt-8 pb-4">
+            <p>이 서비스는 특정 게임 또는 회사와 관련이 없습니다.</p>
+          </footer>
         </div>
-
-        <Settings
-          items={ALL_ITEMS}
-          disabled={disabled}
-          onToggleDisabled={toggleDisabled}
-          onReset={resetAll}
-        />
-
-        <footer className="text-center text-xs text-gray-400 pt-4">
-          <p>이 서비스는 특정 게임 또는 회사와 관련이 없습니다.</p>
-        </footer>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
