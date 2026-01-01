@@ -9,7 +9,13 @@ import {
   CharacterData,
   MAX_CHARACTERS,
 } from '@/types';
-import { STORAGE_KEY, ALL_ITEMS, DAILY_ITEMS, WEEKLY_ITEMS } from '@/lib/constants';
+import {
+  STORAGE_KEY,
+  ALL_ITEMS,
+  DAILY_ITEMS,
+  WEEKLY_ITEMS,
+  EXCHANGE_ITEMS,
+} from '@/lib/constants';
 import { getTodayResetDate, getWeeklyResetDate } from '@/lib/utils';
 
 interface UseChecklistReturn {
@@ -25,7 +31,7 @@ interface UseChecklistReturn {
   // 체크리스트
   checks: CheckState;
   disabled: DisabledState;
-  toggleCheck: (id: string) => void;
+  toggleCheck: (id: string, index?: number) => void; // index: 다중 체크용
   toggleDisabled: (id: string) => void;
   resetAll: () => void;
 }
@@ -48,9 +54,12 @@ function applyResets(data: CharacterData): CharacterData {
   const thisWeek = getWeeklyResetDate();
   let newChecks = { ...(data.checks || {}) };
 
-  // 일일 리셋
+  // 일일 리셋 (일일 + 물물교환)
   if (data.lastReset !== today) {
     DAILY_ITEMS.forEach((item) => {
+      delete newChecks[item.id];
+    });
+    EXCHANGE_ITEMS.forEach((item) => {
       delete newChecks[item.id];
     });
   }
@@ -199,19 +208,37 @@ export function useChecklist(): UseChecklistReturn {
     setActiveCharacterId(id);
   }, []);
 
-  // 체크 토글
+  // 체크 토글 (index: 다중 체크용)
   const toggleCheck = useCallback(
-    (itemId: string) => {
-      setCharacterData((prev) => ({
-        ...prev,
-        [activeCharacterId]: {
-          ...prev[activeCharacterId],
-          checks: {
-            ...prev[activeCharacterId]?.checks,
-            [itemId]: !prev[activeCharacterId]?.checks?.[itemId],
+    (itemId: string, index?: number) => {
+      setCharacterData((prev) => {
+        const currentChecks = prev[activeCharacterId]?.checks || {};
+        const currentValue = currentChecks[itemId];
+
+        let newValue: boolean | number;
+
+        if (index !== undefined) {
+          // 다중 체크: 해당 인덱스까지 완료 (0부터 시작)
+          const currentCount = typeof currentValue === 'number' ? currentValue : 0;
+          // 이미 해당 인덱스가 체크되어 있으면 그 인덱스까지만, 아니면 인덱스+1까지
+          newValue = currentCount > index ? index : index + 1;
+          if (newValue === 0) newValue = 0; // 모두 해제 시 0
+        } else {
+          // 단일 체크
+          newValue = !currentValue;
+        }
+
+        return {
+          ...prev,
+          [activeCharacterId]: {
+            ...prev[activeCharacterId],
+            checks: {
+              ...currentChecks,
+              [itemId]: newValue,
+            },
           },
-        },
-      }));
+        };
+      });
     },
     [activeCharacterId]
   );
@@ -262,7 +289,21 @@ export function useChecklist(): UseChecklistReturn {
 }
 
 /**
- * 일일/주간 별도 진행률 계산
+ * 아이템의 완료 여부 체크 (maxCount 고려)
+ */
+function isItemComplete(
+  item: { id: string; maxCount?: number },
+  checks: CheckState
+): boolean {
+  const value = checks[item.id];
+  if (item.maxCount) {
+    return typeof value === 'number' && value >= item.maxCount;
+  }
+  return !!value;
+}
+
+/**
+ * 일일/주간/물물교환 별도 진행률 계산
  */
 export function getDailyProgress(
   checks: CheckState,
@@ -270,7 +311,7 @@ export function getDailyProgress(
 ): { completed: number; total: number; percent: number } {
   const activeItems = DAILY_ITEMS.filter((item) => !disabled[item.id]);
   const total = activeItems.length;
-  const completed = activeItems.filter((item) => checks[item.id]).length;
+  const completed = activeItems.filter((item) => isItemComplete(item, checks)).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return { completed, total, percent };
@@ -282,7 +323,19 @@ export function getWeeklyProgress(
 ): { completed: number; total: number; percent: number } {
   const activeItems = WEEKLY_ITEMS.filter((item) => !disabled[item.id]);
   const total = activeItems.length;
-  const completed = activeItems.filter((item) => checks[item.id]).length;
+  const completed = activeItems.filter((item) => isItemComplete(item, checks)).length;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return { completed, total, percent };
+}
+
+export function getExchangeProgress(
+  checks: CheckState,
+  disabled: DisabledState
+): { completed: number; total: number; percent: number } {
+  const activeItems = EXCHANGE_ITEMS.filter((item) => !disabled[item.id]);
+  const total = activeItems.length;
+  const completed = activeItems.filter((item) => isItemComplete(item, checks)).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return { completed, total, percent };

@@ -1,38 +1,57 @@
 'use client';
 
-import { useState } from 'react';
-import { CheckItem, CheckState, DisabledState, Subcategory } from '@/types';
-import { SUBCATEGORY_NAMES } from '@/lib/constants';
+import { Category, CheckState, DisabledState, Subcategory } from '@/types';
+import { CheckItemCard } from './CheckItemCard';
+import {
+  DAILY_ITEMS,
+  WEEKLY_ITEMS,
+  EXCHANGE_ITEMS,
+  SHOP_ITEMS,
+  SUBCATEGORY_NAMES,
+} from '@/lib/constants';
 
 interface ChecklistProps {
-  title: string;
-  items: CheckItem[];
+  activeTab: Category;
   checks: CheckState;
   disabled: DisabledState;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, index?: number) => void;
 }
 
 export function Checklist({
-  title,
-  items,
+  activeTab,
   checks,
   disabled,
   onToggle,
 }: ChecklistProps) {
-  const [justChecked, setJustChecked] = useState<string | null>(null);
+  // 탭에 따른 아이템 선택
+  const items = (() => {
+    switch (activeTab) {
+      case 'daily':
+        return DAILY_ITEMS;
+      case 'weekly':
+        return WEEKLY_ITEMS;
+      case 'exchange':
+        return EXCHANGE_ITEMS;
+      case 'shop':
+        return SHOP_ITEMS;
+      default:
+        return [];
+    }
+  })();
+
   const activeItems = items.filter((item) => !disabled[item.id]);
 
   if (activeItems.length === 0) {
-    return null;
+    return (
+      <div className="text-center py-12 text-gray-400">
+        {activeTab === 'shop' ? (
+          <p>주간상점 콘텐츠가 곧 추가됩니다</p>
+        ) : (
+          <p>표시할 항목이 없습니다</p>
+        )}
+      </div>
+    );
   }
-
-  const handleToggle = (id: string) => {
-    onToggle(id);
-    if (!checks[id]) {
-      setJustChecked(id);
-      setTimeout(() => setJustChecked(null), 300);
-    }
-  };
 
   // subcategory별로 그룹화
   const grouped = activeItems.reduce(
@@ -42,107 +61,31 @@ export function Checklist({
       acc[key].push(item);
       return acc;
     },
-    {} as Record<Subcategory, CheckItem[]>
+    {} as Record<Subcategory, typeof activeItems>
   );
 
   const subcategories = Object.keys(grouped) as Subcategory[];
-  const completedCount = activeItems.filter((item) => checks[item.id]).length;
-  const isAllComplete = completedCount === activeItems.length;
 
   return (
-    <div
-      className={`bg-white rounded-2xl border shadow-sm overflow-hidden
-        transition-all duration-300 hover:shadow-md
-        ${isAllComplete ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}
-    >
-      {/* 헤더 */}
-      <div
-        className={`px-4 py-3 border-b flex items-center justify-between
-          ${isAllComplete ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}
-      >
-        <h2
-          className={`font-semibold ${isAllComplete ? 'text-green-700' : 'text-gray-700'}`}
-        >
-          {title}
-        </h2>
-        <span
-          className={`text-xs font-medium px-2 py-0.5 rounded-full
-            ${
-              isAllComplete
-                ? 'bg-green-200 text-green-700'
-                : 'bg-gray-200 text-gray-600'
-            }`}
-        >
-          {completedCount}/{activeItems.length}
-        </span>
-      </div>
-
-      {/* 콘텐츠 */}
-      {subcategories.map((subcat, subcatIndex) => (
+    <div className="space-y-4">
+      {subcategories.map((subcat) => (
         <div key={subcat}>
-          <div
-            className="px-4 py-2 bg-gradient-to-r from-gray-50 to-transparent
-              text-xs font-semibold text-gray-500 uppercase tracking-wider"
-          >
+          {/* 섹션 헤더 */}
+          <div className="text-sm font-semibold text-gray-500 mb-2 px-1">
             {SUBCATEGORY_NAMES[subcat]}
           </div>
-          <ul>
-            {grouped[subcat].map((item, itemIndex) => {
-              const isChecked = checks[item.id] || false;
-              const isJustChecked = justChecked === item.id;
 
-              return (
-                <li
-                  key={item.id}
-                  className="border-b border-gray-100 last:border-0"
-                  style={{
-                    animationDelay: `${(subcatIndex * 3 + itemIndex) * 30}ms`,
-                  }}
-                >
-                  <label
-                    className={`flex items-center px-4 py-3.5 cursor-pointer
-                      transition-all duration-200 select-none
-                      ${isChecked ? 'bg-gray-50/50' : 'hover:bg-blue-50/50'}
-                      active:scale-[0.99]`}
-                  >
-                    <div
-                      className={`shrink-0 transition-transform duration-200
-                        ${isJustChecked ? 'animate-check-pop' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggle(item.id)}
-                        className="cursor-pointer"
-                      />
-                    </div>
-                    <span
-                      className={`ml-3 flex-1 transition-all duration-200 ${
-                        isChecked
-                          ? 'line-through text-gray-400'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {item.note && (
-                      <span
-                        className={`ml-2 text-xs px-2 py-0.5 rounded-full shrink-0
-                          transition-colors duration-200
-                          ${
-                            isChecked
-                              ? 'bg-gray-100 text-gray-400'
-                              : 'bg-blue-100 text-blue-600'
-                          }`}
-                      >
-                        {item.note}
-                      </span>
-                    )}
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
+          {/* 아이템 목록 */}
+          <div className="space-y-2">
+            {grouped[subcat].map((item) => (
+              <CheckItemCard
+                key={item.id}
+                item={item}
+                checks={checks}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>

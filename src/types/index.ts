@@ -1,4 +1,4 @@
-export type Category = 'daily' | 'weekly';
+export type Category = 'daily' | 'weekly' | 'exchange' | 'shop';
 
 export type Subcategory =
   | 'shop'
@@ -8,7 +8,9 @@ export type Subcategory =
   | 'boss'
   | 'abyss'
   | 'raid'
-  | 'guild';
+  | 'guild'
+  | 'exchange'
+  | 'weekly-shop';
 
 export interface CheckItem {
   id: string;
@@ -16,10 +18,11 @@ export interface CheckItem {
   category: Category;
   subcategory: Subcategory;
   note?: string;
+  maxCount?: number; // 다중 체크용 (주간 콘텐츠)
 }
 
 export interface CheckState {
-  [itemId: string]: boolean;
+  [itemId: string]: boolean | number; // number: 다중 체크 완료 횟수
 }
 
 export interface DisabledState {

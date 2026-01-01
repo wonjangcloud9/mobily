@@ -46,41 +46,41 @@ export const DAILY_ITEMS: CheckItem[] = [
     note: '1회',
   },
 
-  // 사냥터 보스 (일일)
+  // 사냥터 보스 (일일 1개 적립, 최대 7회)
   {
     id: 'd-field-1',
     label: '늑대의 숲 보스',
     category: 'daily',
     subcategory: 'field',
-    note: '난도별',
+    note: '최대 7회',
   },
   {
     id: 'd-field-2',
     label: '여신의 뜰 보스',
     category: 'daily',
     subcategory: 'field',
-    note: '난도별',
+    note: '최대 7회',
   },
   {
     id: 'd-field-3',
     label: '얼음 협곡 보스',
     category: 'daily',
     subcategory: 'field',
-    note: '난도별',
+    note: '최대 7회',
   },
   {
     id: 'd-field-4',
     label: '구름 황야 보스',
     category: 'daily',
     subcategory: 'field',
-    note: '난도별',
+    note: '최대 7회',
   },
   {
     id: 'd-field-5',
     label: '센마이 평원 보스',
     category: 'daily',
     subcategory: 'field',
-    note: '난도별',
+    note: '최대 7회',
   },
   {
     id: 'd-field-6',
@@ -114,14 +114,14 @@ export const WEEKLY_ITEMS: CheckItem[] = [
     label: '검은 구멍 (초과)',
     category: 'weekly',
     subcategory: 'dungeon',
-    note: '7회',
+    maxCount: 7,
   },
   {
     id: 'w-dun-2',
     label: '소환의 결계',
     category: 'weekly',
     subcategory: 'dungeon',
-    note: '7회',
+    maxCount: 7,
   },
 
   // 필드 보스
@@ -242,7 +242,35 @@ export const WEEKLY_ITEMS: CheckItem[] = [
   },
 ];
 
-export const ALL_ITEMS: CheckItem[] = [...DAILY_ITEMS, ...WEEKLY_ITEMS];
+// ===== 물물교환 콘텐츠 (매일 오전 6시 초기화) =====
+
+export const EXCHANGE_ITEMS: CheckItem[] = [
+  {
+    id: 'e-1',
+    label: '성수',
+    category: 'exchange',
+    subcategory: 'exchange',
+    note: '메이븐 · 케이틴 특제 통밀빵 x1',
+  },
+  {
+    id: 'e-2',
+    label: '성수 x10',
+    category: 'exchange',
+    subcategory: 'exchange',
+    note: '엔델리온 · 케이틴 특제 통밀빵 x10',
+  },
+];
+
+// ===== 주간상점 콘텐츠 (추후 추가) =====
+
+export const SHOP_ITEMS: CheckItem[] = [];
+
+export const ALL_ITEMS: CheckItem[] = [
+  ...DAILY_ITEMS,
+  ...WEEKLY_ITEMS,
+  ...EXCHANGE_ITEMS,
+  ...SHOP_ITEMS,
+];
 
 export const STORAGE_KEY = 'mobily-checklist';
 
@@ -259,4 +287,6 @@ export const SUBCATEGORY_NAMES: Record<Subcategory, string> = {
   abyss: '어비스 (바리)',
   raid: '레이드',
   guild: '길드/의뢰',
+  exchange: '물물교환',
+  'weekly-shop': '주간상점',
 };
